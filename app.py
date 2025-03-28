@@ -46,5 +46,5 @@ if __name__ == '__main__':
     print(f"Base path: {BASE_PATH}")
     print(f"Static folder is at: {app.static_folder}")
     print(f"Static URL path is: {app.static_url_path}")
-    app.run(debug=True, host='127.0.0.1', port=8085)
-    # app.run(debug=not is_production())
+    # app.run(debug=True, host='127.0.0.1', port=8085)
+    app.run(debug=not is_production())
