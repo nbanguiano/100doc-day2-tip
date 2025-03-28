@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Day 1 - Band Name Generator</title>
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="terminal">
+        <div id="output">
+            <div class="line">Welcome to the Tip Calculator v1.0</div>
+            <div class="line">What's the total bill?</div>
+        </div>
+        <div class="input-line">
+            <span class="prompt">$</span>
+            <input type="text" id="terminal-input" autofocus>
+        </div>
+    </div>
+
+    <script>
+        // Get base path from Flask
+        const BASE_PATH = '{{ base_path }}';
+        
+        const terminalInput = document.getElementById('terminal-input');
+        const output = document.getElementById('output');
+        let currentStep = 1;
+        let inputs = { total: '', tip: '', pax: '' };
+        let waitingForNewSession = false;
+
+        function addLine(text, className = 'line') {
+            const line = document.createElement('div');
+            line.className = className;
+            line.textContent = text;
+            output.appendChild(line);
+            // Scroll to bottom
+            output.scrollTop = output.scrollHeight;
+        }
+
+        function startNewSession() {
+            currentStep = 1;
+            inputs = { total: '', tip: '', pax: '' };
+            waitingForNewSession = false;
+            addLine('\nWhat\'s the total bill?');
+        }
+
+        async function submitForm() {
+            const formData = new FormData();
+            formData.append('total', inputs.total);
+            formData.append('tip', inputs.tip);
+            formData.append('pax', inputs.pax);
+            
+            try {
+                const response = await fetch(`${BASE_PATH}/`, {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                });
+                const data = await response.json();
+                addLine(data.result, 'line result');
+                addLine('\nWould you like to generate another tip? (Y/N)');
+                waitingForNewSession = true;
+            } catch (error) {
+                addLine('Error calculating tip. Please try again.');
+                startNewSession();
+            }
+        }
+
+        terminalInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                const inputValue = terminalInput.value.trim();
+                terminalInput.value = '';
+
+                if (waitingForNewSession) {
+                    if (inputValue.toLowerCase() === 'y') {
+                        startNewSession();
+                    } else if (inputValue.toLowerCase() === 'n') {
+                        addLine('Goodbye! Thanks for using Tip Calculator.');
+                        terminalInput.disabled = true;
+                    } else {
+                        addLine('Please enter Y or N');
+                    }
+                    return;
+                }
+
+                // Echo the command
+                addLine('$ ' + inputValue);
+
+                if (currentStep === 1 && inputValue) {
+                    inputs.total = inputValue;
+                    addLine('What\'s the tip percentage you want to give 10, 12, or 15?');
+                    currentStep = 2;
+                } else if (currentStep === 2 && inputValue) {
+                    inputs.tip = inputValue;
+                    addLine('How many people to split the bill?');
+                    currentStep = 3;
+                } else if (currentStep === 3 && inputValue) {
+                    inputs.pax = inputValue;
+                    submitForm();
+                }
+            }
+        });
+
+        // Auto-focus input when clicking anywhere in the terminal
+        document.querySelector('.terminal').addEventListener('click', function() {
+            terminalInput.focus();
+        });
+    </script>
+</body>
+</html> 
